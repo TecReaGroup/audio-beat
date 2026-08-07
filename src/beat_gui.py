@@ -85,6 +85,7 @@ class BeatTimeline(QWidget):
         self.downbeats: frozenset[float] = frozenset()
         self.position = 0.0
         self.duration = 1.0
+        self.window_seconds = 12.0
         self.setMinimumHeight(210)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -105,12 +106,28 @@ class BeatTimeline(QWidget):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.fillRect(self.rect(), QColor("#111820"))
-            left, right = 28.0, self.width() - 24.0
+            left, right = 30.0, self.width() - 26.0
             baseline = self.height() * 0.58
+            window_start = max(0.0, self.position - 2.0)
+            window_end = min(self.duration, window_start + self.window_seconds)
+            if window_end - window_start < self.window_seconds:
+                window_start = max(0.0, window_end - self.window_seconds)
+            window_length = max(window_end - window_start, 1.0)
             painter.setPen(QPen(QColor("#2d3a45"), 1))
             painter.drawLine(QPointF(left, baseline), QPointF(right, baseline))
+            painter.setPen(QPen(QColor("#23303a"), 1))
+            painter.setFont(QFont("Segoe UI", 8))
+            first_second = int(window_start)
+            for second in range(first_second, int(window_end) + 1):
+                x = left + (right - left) * (second - window_start) / window_length
+                painter.drawLine(QPointF(x, baseline - 16), QPointF(x, baseline + 16))
+                painter.setPen(QColor("#60717d"))
+                painter.drawText(QPointF(x - 10, self.height() - 18), f"{second}s")
+                painter.setPen(QPen(QColor("#23303a"), 1))
             for beat in self.beats:
-                x = left + (right - left) * beat / self.duration
+                if beat < window_start or beat > window_end:
+                    continue
+                x = left + (right - left) * (beat - window_start) / window_length
                 is_downbeat = any(abs(beat - downbeat) < 0.012 for downbeat in self.downbeats)
                 active = abs(beat - self.position) < 0.09
                 color = QColor("#f37f6b") if is_downbeat else QColor("#43c6b7")
@@ -120,14 +137,14 @@ class BeatTimeline(QWidget):
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(color)
                 painter.drawEllipse(QRectF(x - radius, baseline - radius, radius * 2, radius * 2))
-            progress_x = left + (right - left) * min(self.position / self.duration, 1.0)
+            current_x = left + (right - left) * (self.position - window_start) / window_length
             painter.setPen(QPen(QColor("#f6c85f"), 2))
-            painter.drawLine(QPointF(progress_x, 24), QPointF(progress_x, self.height() - 28))
+            painter.drawLine(QPointF(current_x, 24), QPointF(current_x, self.height() - 28))
             painter.setPen(QColor("#82909d"))
             painter.setFont(QFont("Segoe UI", 9))
-            painter.drawText(QPointF(left, 22), "DOWNBEAT")
+            painter.drawText(QPointF(left, 22), f"{window_start:.1f}s — {window_end:.1f}s")
             painter.setPen(QColor("#43c6b7"))
-            painter.drawText(QPointF(left + 86, 22), "BEAT")
+            painter.drawText(QPointF(right - 38, 22), "BEAT")
 
 
 class BeatWindow(QMainWindow):
