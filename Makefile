@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install lock upgrade run lint format format-check typecheck test check build clean
+.PHONY: help install lock upgrade run detect lint format format-check typecheck test check build clean
 
 help: ## Show available commands
 	@uv run python -c "import re; from pathlib import Path; text = Path('Makefile').read_text(); print('\n'.join(f'{m[0]:<16} {m[1]}' for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', text, re.MULTILINE)))"
@@ -14,8 +14,10 @@ lock: ## Refresh the lock file without upgrading packages
 upgrade: ## Upgrade all locked dependencies
 	uv lock --upgrade
 
-run: ## Run the application
-	uv run python-template
+run: detect ## Detect beats in data/audio and write JSON files
+
+detect: ## Detect beats in data/audio and write JSON files
+	uv run beat-detect
 
 lint: ## Run Ruff lint checks
 	uv run ruff check .

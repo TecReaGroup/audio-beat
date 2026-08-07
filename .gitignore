@@ -53,6 +53,9 @@ data/midi/*
 !data/midi/.gitkeep
 data/midi_fixed/*
 !data/midi_fixed/.gitkeep
+data/beats/*
+!data/beats/.gitkeep
+
 
 *.mid
 *.mp3
