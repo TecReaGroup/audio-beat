@@ -7,6 +7,8 @@ dependencies = [
     "beat-this>=1.1.0",
     "PySide6>=6.8",
     "soundfile>=0.13.1",
+    "torch==2.11.0",
+    "torchaudio==2.11.0",
 ]
 
 [project.scripts]
@@ -27,6 +29,19 @@ build-backend = "setuptools.build_meta"
 
 [tool.uv]
 cache-dir = ".uv-cache"
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu130", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+]
+torchaudio = [
+    { index = "pytorch-cu130", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
 
 [tool.setuptools]
 package-dir = {"" = "src"}
