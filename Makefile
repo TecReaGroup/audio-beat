@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install lock upgrade run detect gui lint format format-check typecheck test check build clean
+.PHONY: help install lock upgrade run detect detect-dbn gui lint format format-check typecheck test check build clean
 
 help: ## Show available commands
 	@uv run python -c "import re; from pathlib import Path; text = Path('Makefile').read_text(); print('\n'.join(f'{m[0]:<16} {m[1]}' for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', text, re.MULTILINE)))"
@@ -18,6 +18,9 @@ run: detect ## Detect beats in data/audio and write JSON files
 
 detect: ## Detect beats in data/audio and write JSON files
 	uv run beat-detect
+
+detect-dbn: ## Detect beats with DBN postprocessing
+	uv run --extra dbn beat-detect --dbn
 
 gui: ## Launch the PySide6 beat practice player
 	uv run beat-gui

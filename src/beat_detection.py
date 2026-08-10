@@ -156,6 +156,7 @@ def detect_directory(
     output_dir: Path,
     checkpoint: str = "final0",
     device: str = "auto",
+    dbn: bool = False,
 ) -> int:
     """Detect all audio files below input_path and return the failure count."""
     files = find_audio_files(input_path)
@@ -164,12 +165,25 @@ def detect_directory(
         return 0
     selected_device = _select_device(device)
     precision = "float16" if selected_device.float16 else "float32"
-    print(f"Inference device: {selected_device.description}; precision: {precision}")
-    detector = File2Beats(
-        checkpoint_path=checkpoint,
-        device=selected_device.name,
-        float16=selected_device.float16,
+    postprocessing = "DBN" if dbn else "minimal"
+    print(
+        f"Inference device: {selected_device.description}; precision: {precision}; "
+        f"postprocessing: {postprocessing}"
     )
+    try:
+        detector = File2Beats(
+            checkpoint_path=checkpoint,
+            device=selected_device.name,
+            float16=selected_device.float16,
+            dbn=dbn,
+        )
+    except ImportError as exc:
+        if dbn:
+            raise ValueError(
+                "DBN postprocessing could not load madmom; reinstall it with: "
+                "uv sync --extra dbn --reinstall-package madmom"
+            ) from exc
+        raise
     failures = 0
     for audio_path in files:
         output_path = output_dir / f"{audio_path.stem}.json"
@@ -189,9 +203,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("-o", "--output", type=Path, default=Path("data/beats"))
     parser.add_argument("--model", default="final0", help="Beat This checkpoint name or path")
     parser.add_argument("--device", default="auto", help="auto, cpu, cuda, or cuda:N")
+    parser.add_argument(
+        "--dbn",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="use madmom DBN postprocessing instead of minimal peak picking",
+    )
     args = parser.parse_args(argv)
     try:
-        return 1 if detect_directory(args.input, args.output, args.model, args.device) else 0
+        return (
+            1
+            if detect_directory(
+                args.input,
+                args.output,
+                checkpoint=args.model,
+                device=args.device,
+                dbn=args.dbn,
+            )
+            else 0
+        )
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}")
         return 2

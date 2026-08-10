@@ -11,6 +11,11 @@ dependencies = [
     "torchaudio==2.11.0",
 ]
 
+[project.optional-dependencies]
+dbn = [
+    "madmom @ git+https://github.com/CPJKU/madmom.git@27f032e8947204902c675e5e341a3faf5dc86dae",
+]
+
 [project.scripts]
 beat-detect = "beat_detection:main"
 beat-gui = "beat_gui:main"
